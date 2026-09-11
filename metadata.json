@@ -1,0 +1,6 @@
+{
+  "name": "Hermes Bot Controller",
+  "description": "Aplicativo Android para monitoramento, comandos e controle de múltiplos servidores Hermes Agent.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

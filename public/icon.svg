@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="hermesGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="50%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+  </defs>
+  <!-- Background with rounded rect -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <!-- Hexagonal frame / neural ring -->
+  <polygon points="256,64 420,160 420,352 256,448 92,352 92,160" fill="none" stroke="url(#hermesGrad)" stroke-width="14" stroke-linejoin="round" opacity="0.4" />
+  
+  <!-- Hermes Winged Crest / Node Core -->
+  <path d="M256 120 L280 210 L370 210 L300 265 L326 350 L256 300 L186 350 L212 265 L142 210 L232 210 Z" fill="url(#hermesGrad)" />
+  <!-- Wing Feathers Left -->
+  <path d="M140 180 C90 140, 70 80, 150 70 C160 110, 180 140, 220 160 Z" fill="#38bdf8" opacity="0.85" />
+  <path d="M120 220 C60 200, 50 140, 120 130 C135 160, 160 185, 195 200 Z" fill="#60a5fa" opacity="0.85" />
+  
+  <!-- Wing Feathers Right -->
+  <path d="M372 180 C422 140, 442 80, 362 70 C352 110, 332 140, 292 160 Z" fill="#38bdf8" opacity="0.85" />
+  <path d="M392 220 C452 200, 462 140, 392 130 C377 160, 352 185, 317 200 Z" fill="#60a5fa" opacity="0.85" />
+
+  <!-- Center Core Indicator Dot -->
+  <circle cx="256" cy="256" r="28" fill="#ffffff" />
+  <circle cx="256" cy="256" r="16" fill="#0284c7" />
+  
+  <!-- Bottom Neural Connection nodes -->
+  <circle cx="256" cy="400" r="12" fill="#38bdf8" />
+  <circle cx="190" cy="360" r="8" fill="#818cf8" />
+  <circle cx="322" cy="360" r="8" fill="#818cf8" />
+  <line x1="256" y1="350" x2="256" y2="388" stroke="#38bdf8" stroke-width="6" stroke-linecap="round" />
+</svg>
