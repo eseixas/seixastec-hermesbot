@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Users, Trash2, Check, AlertTriangle, MessageSquare, Sliders } from 'lucide-react';
+import { X, Users, Trash2, Check, AlertTriangle, MessageSquare, Sliders, Plus, UserMinus, UserPlus } from 'lucide-react';
 import { BotGroup, HermesBot } from '../types/hermes';
 import { BotAvatar } from './BotAvatar';
 import { triggerHaptic } from '../services/hermesClient';
@@ -37,6 +37,7 @@ export const EditGroupModal: React.FC<EditGroupModalProps> = ({
   const [description, setDescription] = useState('');
   const [selectedColor, setSelectedColor] = useState(COLOR_OPTIONS[0].value);
   const [selectedBotIds, setSelectedBotIds] = useState<string[]>([]);
+  const [botFilter, setBotFilter] = useState<'all' | 'members' | 'available'>('all');
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -46,6 +47,7 @@ export const EditGroupModal: React.FC<EditGroupModalProps> = ({
       setDescription(group.description || '');
       setSelectedColor(group.color || COLOR_OPTIONS[0].value);
       setSelectedBotIds(group.botIds || []);
+      setBotFilter('all');
       setError(null);
       setConfirmDelete(false);
     }
@@ -53,17 +55,37 @@ export const EditGroupModal: React.FC<EditGroupModalProps> = ({
 
   if (!isOpen || !group) return null;
 
+  const addBot = (botId: string) => {
+    triggerHaptic(12);
+    if (!selectedBotIds.includes(botId)) {
+      setSelectedBotIds(prev => [...prev, botId]);
+      if (error) setError(null);
+    }
+  };
+
+  const removeBot = (botId: string) => {
+    triggerHaptic(15);
+    if (selectedBotIds.length <= 1 && selectedBotIds.includes(botId)) {
+      setError('O grupo precisa manter pelo menos um bot integrante.');
+      return;
+    }
+    setSelectedBotIds(prev => prev.filter(id => id !== botId));
+  };
+
   const toggleBot = (botId: string) => {
-    triggerHaptic(10);
-    setSelectedBotIds(prev => 
-      prev.includes(botId) ? prev.filter(id => id !== botId) : [...prev, botId]
-    );
+    if (selectedBotIds.includes(botId)) {
+      removeBot(botId);
+    } else {
+      addBot(botId);
+    }
   };
 
   const handleSelectAll = () => {
     triggerHaptic(12);
     if (selectedBotIds.length === bots.length) {
-      setSelectedBotIds([]);
+      if (bots.length > 0) {
+        setSelectedBotIds([bots[0].id]); // keep at least 1
+      }
     } else {
       setSelectedBotIds(bots.map(b => b.id));
     }
@@ -216,55 +238,153 @@ export const EditGroupModal: React.FC<EditGroupModalProps> = ({
           </div>
 
           {/* Member Bots Selection (Adicionar e Remover Bots) */}
-          <div className="space-y-1.5 pt-1">
+          <div className="space-y-2 pt-1">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-300">
-                Bots Integrantes ({selectedBotIds.length}/{bots.length})
-              </label>
+              <div>
+                <label className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Bots Integrantes</span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-300 font-mono font-bold">
+                    {selectedBotIds.length}/{bots.length}
+                  </span>
+                </label>
+                <p className="text-[10px] text-slate-400">
+                  Adicione ou remova os agentes que participam das respostas deste grupo.
+                </p>
+              </div>
+
               <button
                 type="button"
                 onClick={handleSelectAll}
-                className="text-[11px] text-cyan-400 hover:text-cyan-300 font-medium"
+                className="text-[11px] text-cyan-400 hover:text-cyan-300 font-medium px-2 py-0.5 rounded-lg hover:bg-slate-800 transition"
               >
-                {selectedBotIds.length === bots.length ? 'Desmarcar Todos' : 'Selecionar Todos'}
+                {selectedBotIds.length === bots.length ? 'Manter 1' : 'Adicionar Todos'}
               </button>
             </div>
 
-            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-              {bots.map((bot) => {
-                const isSelected = selectedBotIds.includes(bot.id);
-                return (
-                  <div
-                    key={bot.id}
-                    onClick={() => toggleBot(bot.id)}
-                    className={`flex items-center justify-between p-2 rounded-xl border transition cursor-pointer ${
-                      isSelected
-                        ? 'bg-slate-800/90 border-cyan-500/40 text-slate-100'
-                        : 'bg-slate-950/60 border-slate-800/80 text-slate-400 hover:bg-slate-900'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <BotAvatar shape={bot.avatarShape} color={bot.avatarColor} size="sm" />
-                      <div className="truncate">
-                        <div className="text-xs font-semibold text-slate-200 truncate">
-                          {bot.name}
-                        </div>
-                        <div className="text-[10px] text-slate-400 truncate">
-                          {bot.role} • <span className="text-cyan-400">{bot.serverName || bot.locationCategory}</span>
+            {/* Filter Tabs: Todos, Integrantes, Disponíveis */}
+            <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800/90 text-[11px]">
+              <button
+                type="button"
+                onClick={() => setBotFilter('all')}
+                className={`flex-1 py-1 px-2 rounded-lg font-medium transition ${
+                  botFilter === 'all'
+                    ? 'bg-slate-800 text-slate-100 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Todos ({bots.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setBotFilter('members')}
+                className={`flex-1 py-1 px-2 rounded-lg font-medium transition ${
+                  botFilter === 'members'
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Integrantes ({selectedBotIds.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setBotFilter('available')}
+                className={`flex-1 py-1 px-2 rounded-lg font-medium transition ${
+                  botFilter === 'available'
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Disponíveis ({bots.length - selectedBotIds.length})
+              </button>
+            </div>
+
+            {/* Bots list with explicit Adicionar and Remover buttons */}
+            <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+              {bots
+                .filter((bot) => {
+                  const isSelected = selectedBotIds.includes(bot.id);
+                  if (botFilter === 'members') return isSelected;
+                  if (botFilter === 'available') return !isSelected;
+                  return true;
+                })
+                .map((bot) => {
+                  const isSelected = selectedBotIds.includes(bot.id);
+                  return (
+                    <div
+                      key={bot.id}
+                      onClick={() => toggleBot(bot.id)}
+                      className={`flex items-center justify-between p-2 rounded-xl border transition cursor-pointer select-none ${
+                        isSelected
+                          ? 'bg-slate-900/90 border-cyan-500/40 text-slate-100 shadow-sm'
+                          : 'bg-slate-950/60 border-slate-800/80 text-slate-400 hover:bg-slate-900 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                        <BotAvatar shape={bot.avatarShape} color={bot.avatarColor} size="sm" />
+                        <div className="truncate">
+                          <div className="text-xs font-semibold text-slate-200 truncate flex items-center gap-1.5">
+                            <span>{bot.name}</span>
+                            {isSelected && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-300 font-medium">
+                                Integrante
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-slate-400 truncate">
+                            {bot.role} • <span className="text-cyan-400">{bot.serverName || bot.locationCategory}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className={`w-5 h-5 rounded-lg border flex items-center justify-center flex-shrink-0 transition ${
-                      isSelected
-                        ? 'bg-cyan-500 border-cyan-400 text-slate-950'
-                        : 'border-slate-700 bg-slate-900 text-transparent'
-                    }`}>
-                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      {/* Explicit Action Button: Remover ou Adicionar */}
+                      <div className="flex-shrink-0">
+                        {isSelected ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeBot(bot.id);
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 text-[11px] font-semibold flex items-center gap-1 transition active:scale-95"
+                            title={`Remover ${bot.name} do grupo`}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            <span>Remover</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addBot(bot.id);
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/25 text-[11px] font-semibold flex items-center gap-1 transition active:scale-95"
+                            title={`Adicionar ${bot.name} ao grupo`}
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Adicionar</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+
+              {bots.filter((bot) => {
+                const isSelected = selectedBotIds.includes(bot.id);
+                if (botFilter === 'members') return isSelected;
+                if (botFilter === 'available') return !isSelected;
+                return true;
+              }).length === 0 && (
+                <div className="p-4 text-center text-xs text-slate-500 bg-slate-950/40 rounded-xl border border-dashed border-slate-800">
+                  {botFilter === 'members'
+                    ? 'Nenhum bot integrante selecionado.'
+                    : botFilter === 'available'
+                    ? 'Todos os bots cadastrados já foram adicionados a este grupo.'
+                    : 'Nenhum bot encontrado.'}
+                </div>
+              )}
             </div>
           </div>
 
